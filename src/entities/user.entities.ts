@@ -1,7 +1,8 @@
 import { Field, ID, ObjectType } from "type-graphql";
-import { Column, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @ObjectType()
+@Entity()
 export class User {
 	@PrimaryGeneratedColumn()
 	@Field(() => ID)
@@ -11,6 +12,6 @@ export class User {
 	@Field((type) => String)
 	username: string;
 
-	// @Column()
-	// password: string;
+	@Column()
+	password: string;
 }

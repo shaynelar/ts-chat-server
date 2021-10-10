@@ -6,10 +6,15 @@ import {
 	Query,
 	Resolver,
 } from "type-graphql";
-import { getConnection, getManager } from "typeorm";
+import { getConnection } from "typeorm";
 import { User } from "../entities/user.entities";
+import * as argon2 from "argon2";
 
-type Error = string | null;
+type SingleFieldError = string | null;
+type MultiFieldError = {
+	field: string;
+	message: string;
+}[];
 
 @ObjectType()
 class UserResponse {
@@ -17,27 +22,31 @@ class UserResponse {
 	user?: User;
 
 	@Field(() => String, { nullable: true })
-	error?: Error;
+	error?: SingleFieldError;
 }
 
 @Resolver(User)
 export class UserResolvers {
 	@Mutation(() => UserResponse)
-	async registerUser(@Arg("username") username: string): Promise<UserResponse> {
+	async registerUser(
+		@Arg("username") username: string,
+		@Arg("password") password: string
+	): Promise<UserResponse> {
 		try {
 			const user = await getConnection()
 				.createQueryBuilder()
 				.insert()
 				.into(User)
-				.values({ username: username })
+				.values([{ username: username, password: await argon2.hash(password) }])
+				.returning("*")
 				.execute()
 				.then((response) => response.raw[0]);
-                console.log(user)
+
 			return {
 				user,
 			};
 		} catch (err) {
-            console.error(err)
+			console.error(err);
 			const error = "There was an error";
 			return {
 				error,

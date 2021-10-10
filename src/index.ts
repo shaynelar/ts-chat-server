@@ -14,6 +14,7 @@ async function main() {
 	const httpServer = http.createServer(app);
     const connect = await connection()
     await connect.runMigrations()
+    
 	const schema = await buildSchema({
 		resolvers: [UserResolvers],
         validate: false
