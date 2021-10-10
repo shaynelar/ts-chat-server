@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node-dev src/index.ts"
+    "start": "ts-node-dev  src/index.ts",
+    "redis": "memurai"
   },
   "devDependencies": {
     "@types/connect-redis": "^0.0.17",
