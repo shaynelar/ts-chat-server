@@ -36,6 +36,11 @@ async function main(): Promise<void> {
 
 	const server = new ApolloServer({
 		schema: schema,
+		context: ({ req, res }) => ({
+			req,
+			res,
+			redis,
+		}),
 		plugins: [
 			ApolloServerPluginDrainHttpServer({ httpServer }),
 			ApolloServerPluginLandingPageGraphQLPlayground,
