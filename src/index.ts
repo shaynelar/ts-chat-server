@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import {
@@ -5,19 +6,27 @@ import {
 	ApolloServerPluginLandingPageGraphQLPlayground,
 } from "apollo-server-core";
 import http from "http";
+
 import { buildSchema } from "type-graphql";
 import { UserResolvers } from "./resolvers/user.resolvers";
 import { connection } from "./connection";
+import session from "express-session";
+import Redis from "ioredis";
+import connectRedis from "connect-redis";
 
-async function main() {
+async function main(): Promise<void> {
 	const app = express();
 	const httpServer = http.createServer(app);
-    const connect = await connection()
-    await connect.runMigrations()
-    
+	try {
+		const connect = await connection();
+		await connect.runMigrations();
+	} catch (err) {
+		console.error(err);
+	}
+
 	const schema = await buildSchema({
 		resolvers: [UserResolvers],
-        validate: false
+		validate: false,
 	});
 
 	const server = new ApolloServer({
@@ -27,7 +36,9 @@ async function main() {
 			ApolloServerPluginLandingPageGraphQLPlayground,
 		],
 	});
-
+	// app.use(session({
+	// 	secret:
+	// }))
 	await server.start();
 	server.applyMiddleware({
 		app,
