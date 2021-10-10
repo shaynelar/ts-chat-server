@@ -1,6 +1,7 @@
 import {
 	Arg,
 	Field,
+	InputType,
 	Mutation,
 	ObjectType,
 	Query,
@@ -24,30 +25,91 @@ class UserResponse {
 	@Field(() => String, { nullable: true })
 	error?: SingleFieldError;
 }
+@InputType()
+class UserBaseInput {
+	@Field()
+	username: string;
+
+	@Field()
+	password: string;
+}
+@InputType()
+class RegisterInput extends UserBaseInput {
+	@Field()
+	confirmPassword: string;
+}
 
 @Resolver(User)
 export class UserResolvers {
 	@Mutation(() => UserResponse)
 	async registerUser(
-		@Arg("username") username: string,
-		@Arg("password") password: string
+		@Arg("userInput") userInput: RegisterInput
 	): Promise<UserResponse> {
 		try {
-			const user = await getConnection()
-				.createQueryBuilder()
-				.insert()
-				.into(User)
-				.values([{ username: username, password: await argon2.hash(password) }])
-				.returning("*")
-				.execute()
-				.then((response) => response.raw[0]);
+			if (userInput.password === userInput.confirmPassword) {
+				const user = await getConnection()
+					.createQueryBuilder()
+					.insert()
+					.into(User)
+					.values([
+						{
+							username: userInput.username,
+							password: await argon2.hash(userInput.password),
+						},
+					])
+					.returning("*")
+					.execute()
+					.then((response) => response.raw[0]);
 
-			return {
-				user,
-			};
+				return {
+					user,
+				};
+			} else {
+				const error = "Passwords do not match";
+				return {
+					error,
+				};
+			}
 		} catch (err) {
 			console.error(err);
 			const error = "There was an error";
+			return {
+				error,
+			};
+		}
+	}
+
+	@Mutation(() => UserResponse)
+	async loginUser(
+		@Arg("userInput") userInput: UserBaseInput
+	): Promise<UserResponse> {
+		const user = await getConnection()
+			.createQueryBuilder()
+			.select("user")
+			.from(User, "user")
+			.where("user.username = :username", { username: userInput.username })
+			.getOne();
+		if (user) {
+			try {
+				if (await argon2.verify(user.password, userInput.password)) {
+					return {
+						user,
+					};
+				} else {
+					const error = "Username or password is incorrect";
+					return {
+						error,
+					};
+				}
+			} catch (err) {
+				const error = "An error occured";
+				console.error(err);
+				return {
+					error,
+				};
+			}
+		} else {
+			const error = "That user does not exist";
 			return {
 				error,
 			};
