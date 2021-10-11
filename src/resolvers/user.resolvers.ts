@@ -11,14 +11,8 @@ import {
 import { getConnection } from "typeorm";
 import { User } from "../entities/user.entities";
 import * as argon2 from "argon2";
-import { Context } from "../types";
+import { Context, SingleFieldError } from "../types";
 import { validate } from "uuid";
-
-type SingleFieldError = string | null;
-type MultiFieldError = {
-	field: string;
-	message: string;
-}[];
 
 @ObjectType()
 class UserResponse {
@@ -63,7 +57,6 @@ export class UserResolvers {
 					.returning("*")
 					.execute()
 					.then((response) => response.raw[0]);
-
 				return {
 					user,
 				};

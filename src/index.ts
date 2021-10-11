@@ -6,7 +6,7 @@ import {
 	ApolloServerPluginLandingPageGraphQLPlayground,
 } from "apollo-server-core";
 import http from "http";
-
+import cors from "cors";
 import { buildSchema } from "type-graphql";
 import { UserResolvers } from "./resolvers/user.resolvers";
 import { connection } from "./connection";
@@ -34,6 +34,10 @@ async function main(): Promise<void> {
 		validate: false,
 	});
 
+	const corsOptions = {
+		origin: "http://localhost:3000",
+		credentials: true,
+	};
 	const server = new ApolloServer({
 		schema: schema,
 		context: ({ req, res }) => ({
@@ -46,6 +50,8 @@ async function main(): Promise<void> {
 			ApolloServerPluginLandingPageGraphQLPlayground,
 		],
 	});
+
+	app.use(cors(corsOptions));
 	app.use(
 		session({
 			name: "ts-chat-cookie",
@@ -66,6 +72,7 @@ async function main(): Promise<void> {
 	await server.start();
 	server.applyMiddleware({
 		app,
+		cors: corsOptions,
 	});
 	//@ts-ignore
 	await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
