@@ -35,7 +35,7 @@ async function main(): Promise<void> {
 	});
 
 	const corsOptions = {
-		origin: "http://localhost:3000",
+		origin: process.env.ORIGIN,
 		credentials: true,
 	};
 	const server = new ApolloServer({
@@ -78,4 +78,4 @@ async function main(): Promise<void> {
 	await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
 	console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
 }
-main();
+main().catch((err) => console.error(err));

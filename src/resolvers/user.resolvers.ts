@@ -40,7 +40,8 @@ class RegisterInput extends UserBaseInput {
 export class UserResolvers {
 	@Mutation(() => UserResponse)
 	async registerUser(
-		@Arg("userInput") userInput: RegisterInput
+		@Arg("userInput") userInput: RegisterInput,
+		@Ctx() { req }: Context
 	): Promise<UserResponse> {
 		try {
 			if (userInput.password === userInput.confirmPassword) {
@@ -57,6 +58,7 @@ export class UserResolvers {
 					.returning("*")
 					.execute()
 					.then((response) => response.raw[0]);
+				req.session.userID = user.id;
 				return {
 					user,
 				};
