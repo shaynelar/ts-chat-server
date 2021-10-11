@@ -159,7 +159,7 @@ export class UserResolvers {
 				};
 			}
 		} catch (err) {
-			const error = "No user exists";
+			const error = "An error occured";
 			return {
 				error,
 			};

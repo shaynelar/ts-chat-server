@@ -8,7 +8,7 @@ import {
 import http from "http";
 import cors from "cors";
 import { buildSchema } from "type-graphql";
-import { UserResolvers } from "./resolvers/user.resolvers";
+import { UserResolvers } from "./resolvers";
 import { connection } from "./connection";
 import session from "express-session";
 import Redis from "ioredis";

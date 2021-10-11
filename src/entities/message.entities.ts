@@ -1,33 +1,31 @@
+import "reflect-metadata"
 import { Field, ID, ObjectType } from "type-graphql";
 import {
 	Column,
 	CreateDateColumn,
 	Entity,
-	OneToMany,
+	ManyToOne,
 	PrimaryGeneratedColumn,
 	Timestamp,
 } from "typeorm";
-import { Message } from "./message.entities";
+import { User } from "./user.entities";
 
 @ObjectType()
 @Entity()
-export class User {
+export class Message {
 	@PrimaryGeneratedColumn()
 	@Field(() => ID)
 	id: string;
 
-	@Column()
-	@Field((type) => String)
-	username: string;
+	@Field(() => User)
+	@ManyToOne(() => User, (user) => user.sentMessages)
+	sender: User;
 
-	@Column()
-	password: string;
-
-	@CreateDateColumn()
 	@Field(() => Date, { defaultValue: new Date() })
+	@CreateDateColumn()
 	createdAt: Timestamp;
 
-	@Field(() => [Message])
-	@OneToMany(() => Message, (message) => message.sender)
-	sentMessages: Message[];
+	@Field(() => String)
+	@Column()
+	body: string;
 }

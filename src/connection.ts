@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createConnection } from "typeorm";
-import { User } from "./entities/user.entities";
+import { User, Message } from "./entities";
 import path from "path";
 
 export async function connection() {
@@ -13,7 +13,7 @@ export async function connection() {
 		database: "ts-chat",
 		logging: true,
 		synchronize: true,
-		entities: [User],
+		entities: [User, Message],
 		migrations: [path.join(__dirname, ".migrations/*")],
 	});
 }
