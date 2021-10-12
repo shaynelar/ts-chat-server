@@ -18,6 +18,7 @@ import { execute, subscribe } from "graphql";
 import { SubscriptionServer } from "subscriptions-transport-ws";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { MessageResolvers } from "./resolvers/message.resolvers";
+import { getManager } from "typeorm";
 
 async function main(): Promise<void> {
 	const __prod__ = process.env.NODE_ENV ? true : false;
@@ -26,11 +27,12 @@ async function main(): Promise<void> {
 	const httpServer = http.createServer(app);
 	const RedisStore = connectRedis(session);
 	const redis = new Redis();
+
 	try {
 		const connect = await connection();
 		await connect.runMigrations();
 	} catch (err) {
-		console.error(err);
+		throw new Error(`Eror connecting to DB: ${err} Exiting...`);
 	}
 
 	const schema = await buildSchema({
@@ -42,7 +44,7 @@ async function main(): Promise<void> {
 		origin: process.env.ORIGIN,
 		credentials: true,
 	};
-	
+
 	const server = new ApolloServer({
 		schema: schema,
 		context: ({ req, res }) => ({

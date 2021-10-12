@@ -9,46 +9,57 @@ import {
 	Ctx,
 	Resolver,
 	Arg,
+	Field,
 } from "type-graphql";
-import { Message, User } from "../entities";
-import { ChangeStream, getConnection } from "typeorm";
+import { Message } from "../entities";
+import { getConnection } from "typeorm";
 
-const messages: Message[] = [];
+@ObjectType()
+class MessageResponse {
+	@Field(() => Message, { nullable: true })
+	message?: Message;
 
-@Resolver(() => Message)
+	@Field(() => String, { nullable: true })
+	error?: string;
+}
+
+@Resolver(Message)
 export class MessageResolvers {
-	@Mutation(() => Message)
+	@Mutation(() => MessageResponse)
 	async createMessage(
 		@PubSub() pubSub: PubSubEngine,
 		@Arg("body") body: string,
 		@Ctx() { req }: Context
-	): Promise<Message | string> {
-		const user = await getConnection()
-			.createQueryBuilder()
-			.select("user")
-			.from(User, "user")
-			.where("user.id = :id", { id: req.session.userID })
-			.getOne();
-		if (user) {
-            console.log(user)
+	): Promise<MessageResponse> {
+		if (req.session.userID) {
 			try {
-				const message = await getConnection()
+				await getConnection()
 					.createQueryBuilder()
 					.insert()
 					.into(Message)
-					.values([{ sender: user, body: body }])
-					.returning("*")
-					.execute()
-					.then((res) => res.raw[0]);
-				messages.push(message);
+					.values([{ senderId: req.session.userID, body: body }])
+					.execute();
+				const message = await getConnection()
+					.createQueryBuilder(Message, "message")
+					.leftJoinAndSelect("message.sender", "sender")
+					.where("message.senderId = :id", { id: req.session.userID })
+					.getOne();
 				const payload = message;
 				await pubSub.publish("MESSAGE", payload);
-				return message;
+				return {
+					message,
+				};
 			} catch (err) {
-				return "A problem occured";
+				const error = "A problem occured";
+				return {
+					error,
+				};
 			}
 		} else {
-			return "A problem occured";
+			const error = "A problem occured";
+			return {
+				error,
+			};
 		}
 	}
 
