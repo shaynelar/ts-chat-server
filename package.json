@@ -17,6 +17,7 @@
     "typescript": "^4.4.3"
   },
   "dependencies": {
+    "@graphql-tools/schema": "^8.2.0",
     "apollo-server": "^3.3.0",
     "apollo-server-express": "^3.3.0",
     "argon2": "^0.28.2",
@@ -29,6 +30,7 @@
     "ioredis": "^4.27.10",
     "pg": "^8.7.1",
     "reflect-metadata": "^0.1.13",
+    "subscriptions-transport-ws": "^0.9.19",
     "type-graphql": "^1.1.1",
     "typeorm": "^0.2.38"
   }

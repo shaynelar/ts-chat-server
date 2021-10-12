@@ -14,6 +14,10 @@ import session from "express-session";
 import Redis from "ioredis";
 import connectRedis from "connect-redis";
 import { v4 as uuidv4 } from "uuid";
+import { execute, subscribe } from "graphql";
+import { SubscriptionServer } from "subscriptions-transport-ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { MessageResolvers } from "./resolvers/message.resolvers";
 
 async function main(): Promise<void> {
 	const __prod__ = process.env.NODE_ENV ? true : false;
@@ -30,7 +34,7 @@ async function main(): Promise<void> {
 	}
 
 	const schema = await buildSchema({
-		resolvers: [UserResolvers],
+		resolvers: [UserResolvers, MessageResolvers],
 		validate: false,
 	});
 
@@ -38,6 +42,7 @@ async function main(): Promise<void> {
 		origin: process.env.ORIGIN,
 		credentials: true,
 	};
+	
 	const server = new ApolloServer({
 		schema: schema,
 		context: ({ req, res }) => ({
@@ -48,8 +53,32 @@ async function main(): Promise<void> {
 		plugins: [
 			ApolloServerPluginDrainHttpServer({ httpServer }),
 			ApolloServerPluginLandingPageGraphQLPlayground,
+			{
+				async serverWillStart() {
+					return {
+						async drainServer() {
+							subscriptionServer.close();
+						},
+					};
+				},
+			},
 		],
 	});
+	const subscriptionServer = SubscriptionServer.create(
+		{
+			// This is the `schema` we just created.
+			schema,
+			// These are imported from `graphql`.
+			execute,
+			subscribe,
+		},
+		{
+			// This is the `httpServer` we created in a previous step.
+			server: httpServer,
+			// This `server` is the instance returned from `new ApolloServer`.
+			path: server.graphqlPath,
+		}
+	);
 
 	app.use(cors(corsOptions));
 	app.use(
