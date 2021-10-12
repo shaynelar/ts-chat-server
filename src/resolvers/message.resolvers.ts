@@ -10,6 +10,7 @@ import {
 	Resolver,
 	Arg,
 	Field,
+	Query,
 } from "type-graphql";
 import { Message } from "../entities";
 import { getConnection } from "typeorm";
@@ -18,6 +19,15 @@ import { getConnection } from "typeorm";
 class MessageResponse {
 	@Field(() => Message, { nullable: true })
 	message?: Message;
+
+	@Field(() => String, { nullable: true })
+	error?: string;
+}
+
+@ObjectType()
+class AllMessageResponse {
+	@Field(() => [Message], { nullable: true })
+	allMessages?: Message[];
 
 	@Field(() => String, { nullable: true })
 	error?: string;
@@ -57,6 +67,23 @@ export class MessageResolvers {
 			}
 		} else {
 			const error = "A problem occured";
+			return {
+				error,
+			};
+		}
+	}
+	@Query(() => AllMessageResponse)
+	async getAllMessages(): Promise<AllMessageResponse> {
+		try {
+			const allMessages = await getConnection()
+				.createQueryBuilder(Message, "message")
+				.leftJoinAndSelect("message.sender", "sender")
+				.getMany();
+			return {
+				allMessages,
+			};
+		} catch (err) {
+			const error = "An problem occured";
 			return {
 				error,
 			};
