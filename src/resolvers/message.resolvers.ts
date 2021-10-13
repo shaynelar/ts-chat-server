@@ -93,6 +93,7 @@ export class MessageResolvers {
 			const messages = await getConnection()
 				.createQueryBuilder(Message, "message")
 				.leftJoinAndSelect("message.sender", "sender")
+				.orderBy("message.id", "DESC")
 				.take(offsetPagination.limit)
 				.getMany();
 			return {

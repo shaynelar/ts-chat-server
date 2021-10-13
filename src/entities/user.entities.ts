@@ -28,6 +28,9 @@ export class User {
 	createdAt: Timestamp;
 
 	@Field(() => [Message])
-	@OneToMany(() => Message, (message) => message.sender, { cascade: true, eager: true })
+	@OneToMany(() => Message, (message) => message.sender, {
+		cascade: true,
+		eager: true,
+	})
 	sentMessages: Message[];
 }
