@@ -27,7 +27,7 @@ class MessageResponse {
 @ObjectType()
 class AllMessageResponse {
 	@Field(() => [Message], { nullable: true })
-	allMessages?: Message[];
+	messages?: Message[];
 
 	@Field(() => String, { nullable: true })
 	error?: string;
@@ -79,12 +79,12 @@ export class MessageResolvers {
 	@Query(() => AllMessageResponse)
 	async getAllMessages(): Promise<AllMessageResponse> {
 		try {
-			const allMessages = await getConnection()
+			const messages = await getConnection()
 				.createQueryBuilder(Message, "message")
 				.leftJoinAndSelect("message.sender", "sender")
 				.getMany();
 			return {
-				allMessages,
+				messages,
 			};
 		} catch (err) {
 			const error = "An problem occured";
