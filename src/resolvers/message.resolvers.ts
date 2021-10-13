@@ -43,16 +43,19 @@ export class MessageResolvers {
 	): Promise<MessageResponse> {
 		if (req.session.userID) {
 			try {
-				await getConnection()
+				const id = await getConnection()
 					.createQueryBuilder()
 					.insert()
 					.into(Message)
 					.values([{ senderId: req.session.userID, body: body }])
-					.execute();
+					.returning("*")
+					.execute()
+					.then((res) => res.raw[0]);
+				console.log(id);
 				const message = await getConnection()
 					.createQueryBuilder(Message, "message")
 					.leftJoinAndSelect("message.sender", "sender")
-					.where("message.senderId = :id", { id: req.session.userID })
+					.where("message.id = :id", { id: id.id })
 					.getOne();
 				const payload = message;
 				await pubSub.publish("MESSAGE", payload);
