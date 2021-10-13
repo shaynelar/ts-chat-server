@@ -51,12 +51,13 @@ export class MessageResolvers {
 					.returning("*")
 					.execute()
 					.then((res) => res.raw[0]);
-				console.log(id);
+
 				const message = await getConnection()
 					.createQueryBuilder(Message, "message")
 					.leftJoinAndSelect("message.sender", "sender")
 					.where("message.id = :id", { id: id.id })
 					.getOne();
+					console.log(message)
 				const payload = message;
 				await pubSub.publish("MESSAGE", payload);
 				return {
