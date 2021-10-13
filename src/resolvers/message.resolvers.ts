@@ -11,6 +11,8 @@ import {
 	Arg,
 	Field,
 	Query,
+	InputType,
+	Int,
 } from "type-graphql";
 import { Message } from "../entities";
 import { getConnection } from "typeorm";
@@ -33,6 +35,15 @@ class AllMessageResponse {
 	error?: string;
 }
 
+@InputType()
+class OffsetPagination {
+	@Field(() => Int, { defaultValue: 0 })
+	offset?: number;
+
+	@Field(() => Int, { defaultValue: 20 })
+	limit?: number;
+}
+
 @Resolver(Message)
 export class MessageResolvers {
 	@Mutation(() => MessageResponse)
@@ -51,13 +62,11 @@ export class MessageResolvers {
 					.returning("*")
 					.execute()
 					.then((res) => res.raw[0]);
-
 				const message = await getConnection()
 					.createQueryBuilder(Message, "message")
 					.leftJoinAndSelect("message.sender", "sender")
 					.where("message.id = :id", { id: id.id })
 					.getOne();
-					console.log(message)
 				const payload = message;
 				await pubSub.publish("MESSAGE", payload);
 				return {
@@ -77,17 +86,20 @@ export class MessageResolvers {
 		}
 	}
 	@Query(() => AllMessageResponse)
-	async getAllMessages(): Promise<AllMessageResponse> {
+	async getAllMessages(
+		@Arg("offsetPagination") offsetPagination: OffsetPagination
+	): Promise<AllMessageResponse> {
 		try {
 			const messages = await getConnection()
 				.createQueryBuilder(Message, "message")
 				.leftJoinAndSelect("message.sender", "sender")
+				.take(offsetPagination.limit)
 				.getMany();
 			return {
 				messages,
 			};
 		} catch (err) {
-			const error = "An problem occured";
+			const error = "A problem occured";
 			return {
 				error,
 			};
