@@ -52,42 +52,94 @@ class OffsetPagination {
 
 @Resolver(Message)
 export class MessageResolvers {
+	@Mutation(() => RoomResponse)
+	async createRoom(
+		@PubSub() pubSub: PubSubEngine,
+		@Arg("roomName") roomName: string,
+		@Ctx() { req }: Context
+	): Promise<RoomResponse> {
+		console.log(req);
+		if (req.session.userID) {
+			try {
+				const room = await getConnection()
+					.createQueryBuilder()
+					.insert()
+					.into(Room)
+					.values([{ createrId: req.session.userID, roomName: roomName }])
+					.returning("*")
+					.execute()
+					.then((res) => res.raw[0]);
+				pubSub.publish(roomName, roomName);
+				return {
+					room,
+				};
+			} catch (err) {
+				const error = "Some error occured";
+				return {
+					error,
+				};
+			}
+		}
+		const error = "Not Authenticated";
+		return {
+			error,
+		};
+	}
 	@Mutation(() => MessageResponse)
 	async createMessage(
 		@PubSub() pubSub: PubSubEngine,
 		@Arg("body") body: string,
-		@Arg("roomName") roomName: string,
+		@Arg("roomId") roomId: string,
 		@Ctx() { req }: Context
 	): Promise<MessageResponse> {
-		
-		if (req.session.userID) {
-			try {
-				const id = await getConnection()
-					.createQueryBuilder()
-					.insert()
-					.into(Message)
-					.values([{ senderId: req.session.userID, body: body, roomId: }])
-					.returning("*")
-					.execute()
-					.then((res) => res.raw[0]);
-				const message = await getConnection()
-					.createQueryBuilder(Message, "message")
-					.leftJoinAndSelect("message.sender", "sender")
-					.where("message.id = :id", { id: id.id })
-					.getOne();
-				const payload = message;
-				await pubSub.publish(roomName, payload);
-				return {
-					message,
-				};
-			} catch (err) {
+		//@ts-ignore
+		const room = await getConnection()
+			.createQueryBuilder()
+			.select("room")
+			.from(Room, "room")
+			.where("room.id = :id", { id: roomId })
+			.getOne();
+		if (room) {
+			if (req.session.userID) {
+				try {
+					const id = await getConnection()
+						.createQueryBuilder()
+						.insert()
+						.into(Message)
+						.values([
+							{
+								senderId: req.session.userID,
+								body: body,
+								roomId: room.id,
+							},
+						])
+						.returning("*")
+						.execute()
+						.then((res) => res.raw[0]);
+					const message = await getConnection()
+						.createQueryBuilder(Message, "message")
+						.leftJoinAndSelect("message.sender", "sender")
+						.where("message.id = :id", { id: id.id })
+						.getOne();
+					const payload = message;
+					await pubSub.publish(room?.roomName, payload);
+					return {
+						message,
+					};
+				} catch (err) {
+					const error = "A problem occured";
+					return {
+						error,
+					};
+				}
+			} else {
 				const error = "A problem occured";
 				return {
 					error,
 				};
 			}
 		} else {
-			const error = "A problem occured";
+			const error = "There was a problem creating the subscriptiotn";
 			return {
 				error,
 			};
@@ -115,38 +167,6 @@ export class MessageResolvers {
 		}
 	}
 
-	@Mutation(() => RoomResponse)
-	async createRoom(
-		@PubSub() pubSub: PubSubEngine,
-		@Arg("roomName") roomName: string,
-		@Ctx() { req }: Context
-	): Promise<RoomResponse> {
-		if (req.session.userID) {
-			try {
-				const room = await getConnection()
-					.createQueryBuilder()
-					.insert()
-					.into(Room)
-					.values([{ createrId: req.session.userID, roomName: roomName }])
-					.returning("*")
-					.execute()
-					.then((res) => res.raw[0]);
-				pubSub.publish(roomName, roomName);
-				return {
-					room,
-				};
-			} catch (err) {
-				const error = "Some error occured";
-				return {
-					error,
-				};
-			}
-		}
-		const error = "Not Authenticated";
-		return {
-			error,
-		};
-	}
 	@Subscription({
 		topics: ({ args }) => args.topic,
 	})
