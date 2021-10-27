@@ -5,40 +5,37 @@ import {
 	CreateDateColumn,
 	Entity,
 	ManyToOne,
+	OneToMany,
 	PrimaryGeneratedColumn,
 	Timestamp,
 } from "typeorm";
-import { Room } from "./room.entities";
+import { Message } from ".";
 import { User } from "./user.entities";
 
 @ObjectType()
 @Entity()
-export class Message {
+export class Room {
 	@PrimaryGeneratedColumn()
 	@Field(() => ID)
 	id: string;
 
+	@Field(() => String)
+	@Column()
+	roomName: string;
+
 	@Field(() => User)
-	@ManyToOne(() => User, (user) => user.sentMessages, { cascade: ["insert"] })
-	sender: User;
+	@ManyToOne(() => User, (user) => user.createdRooms, { cascade: ["insert"] })
+	creater: User;
 
 	@Field()
 	@Column()
-	senderId?: string;
+	createrId?: string;
+
+	@Field(() => [Message])
+	@OneToMany(() => Message, (message) => message.id, { nullable: true })
+	messages: Message[];
 
 	@Field(() => Date, { defaultValue: new Date() })
 	@CreateDateColumn()
 	createdAt: Timestamp;
-
-	@Field(() => String)
-	@Column()
-	body: string;
-
-	@Field(() => Room)
-	@ManyToOne(() => Room, (room) => room.messages, { cascade: ["insert"] })
-	room: Room;
-
-	@Field()
-	@Column()
-	roomId: string;
 }

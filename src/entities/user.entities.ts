@@ -8,6 +8,7 @@ import {
 	Timestamp,
 } from "typeorm";
 import { Message } from "./message.entities";
+import { Room } from "./room.entities";
 
 @ObjectType()
 @Entity()
@@ -33,4 +34,8 @@ export class User {
 		eager: true,
 	})
 	sentMessages: Message[];
+
+	@Field(() => [Room])
+	@OneToMany(() => Room, (room) => room.creater)
+	createdRooms: Room[];
 }

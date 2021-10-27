@@ -14,25 +14,31 @@ import {
 	InputType,
 	Int,
 } from "type-graphql";
-import { Message } from "../entities";
+import { Message, Room } from "../entities";
 import { getConnection } from "typeorm";
 
 @ObjectType()
-class MessageResponse {
-	@Field(() => Message, { nullable: true })
-	message?: Message;
-
+class BaseResponse {
 	@Field(() => String, { nullable: true })
 	error?: string;
 }
 
 @ObjectType()
-class AllMessageResponse {
+class MessageResponse extends BaseResponse {
+	@Field(() => Message, { nullable: true })
+	message?: Message;
+}
+
+@ObjectType()
+class RoomResponse extends BaseResponse {
+	@Field(() => Room, { nullable: true })
+	room?: Room;
+}
+
+@ObjectType()
+class AllMessageResponse extends BaseResponse {
 	@Field(() => [Message], { nullable: true })
 	messages?: Message[];
-
-	@Field(() => String, { nullable: true })
-	error?: string;
 }
 
 @InputType()
@@ -50,15 +56,17 @@ export class MessageResolvers {
 	async createMessage(
 		@PubSub() pubSub: PubSubEngine,
 		@Arg("body") body: string,
+		@Arg("roomName") roomName: string,
 		@Ctx() { req }: Context
 	): Promise<MessageResponse> {
+		
 		if (req.session.userID) {
 			try {
 				const id = await getConnection()
 					.createQueryBuilder()
 					.insert()
 					.into(Message)
-					.values([{ senderId: req.session.userID, body: body }])
+					.values([{ senderId: req.session.userID, body: body, roomId: }])
 					.returning("*")
 					.execute()
 					.then((res) => res.raw[0]);
@@ -68,7 +76,7 @@ export class MessageResolvers {
 					.where("message.id = :id", { id: id.id })
 					.getOne();
 				const payload = message;
-				await pubSub.publish("MESSAGE", payload);
+				await pubSub.publish(roomName, payload);
 				return {
 					message,
 				};
@@ -107,10 +115,44 @@ export class MessageResolvers {
 		}
 	}
 
+	@Mutation(() => RoomResponse)
+	async createRoom(
+		@PubSub() pubSub: PubSubEngine,
+		@Arg("roomName") roomName: string,
+		@Ctx() { req }: Context
+	): Promise<RoomResponse> {
+		if (req.session.userID) {
+			try {
+				const room = await getConnection()
+					.createQueryBuilder()
+					.insert()
+					.into(Room)
+					.values([{ createrId: req.session.userID, roomName: roomName }])
+					.returning("*")
+					.execute()
+					.then((res) => res.raw[0]);
+				pubSub.publish(roomName, roomName);
+				return {
+					room,
+				};
+			} catch (err) {
+				const error = "Some error occured";
+				return {
+					error,
+				};
+			}
+		}
+		const error = "Not Authenticated";
+		return {
+			error,
+		};
+	}
 	@Subscription({
-		topics: "MESSAGE",
+		topics: ({ args }) => args.topic,
 	})
-	newMessage(@Root() { id, sender, body, createdAt }: Message): Message {
-		return { id, sender, body, createdAt };
+	newMessage(
+		@Root() { id, sender, body, createdAt, room, roomId }: Message
+	): Message {
+		return { id, sender, body, createdAt, room, roomId };
 	}
 }
