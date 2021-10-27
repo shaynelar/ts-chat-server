@@ -165,4 +165,19 @@ export class UserResolvers {
 			};
 		}
 	}
+
+	@Mutation(() => Boolean)
+	async logoutUser(@Ctx() { req, res }: Context): Promise<Boolean> {
+		return new Promise((resolve) => {
+			req.session.destroy((err) => {
+				//@ts-ignore
+				res.clearCookie("ts-chat-cookie");
+				if (err) {
+					resolve(false);
+					return;
+				}
+			});
+			resolve(true);
+		});
+	}
 }

@@ -3,6 +3,7 @@ import { EntityManager } from "typeorm";
 
 export type Context = {
 	req: Express.Request & { session: Session & { userID: string } };
+	res: Express.Response;
 	em: EntityManager;
 };
 
