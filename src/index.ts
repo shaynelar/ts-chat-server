@@ -16,9 +16,7 @@ import connectRedis from "connect-redis";
 import { v4 as uuidv4 } from "uuid";
 import { execute, subscribe } from "graphql";
 import { SubscriptionServer } from "subscriptions-transport-ws";
-import { makeExecutableSchema } from "@graphql-tools/schema";
 import { MessageResolvers } from "./resolvers/message.resolvers";
-import { getManager } from "typeorm";
 
 async function main(): Promise<void> {
 	const __prod__ = process.env.NODE_ENV ? true : false;

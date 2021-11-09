@@ -92,13 +92,13 @@ export class MessageResolvers {
 		@Arg("roomId") roomId: string,
 		@Ctx() { req }: Context
 	): Promise<MessageResponse> {
-		//@ts-ignore
 		const room = await getConnection()
 			.createQueryBuilder()
 			.select("room")
 			.from(Room, "room")
 			.where("room.id = :id", { id: roomId })
 			.getOne();
+		console.log(room);
 		if (room) {
 			if (req.session.userID) {
 				try {
@@ -122,7 +122,9 @@ export class MessageResolvers {
 						.where("message.id = :id", { id: id.id })
 						.getOne();
 					const payload = message;
-					await pubSub.publish(room?.roomName, payload);
+
+					await pubSub.publish(roomId, payload);
+					console.log(roomId);
 					return {
 						message,
 					};
@@ -139,7 +141,7 @@ export class MessageResolvers {
 				};
 			}
 		} else {
-			const error = "There was a problem creating the subscriptiotn";
+			const error = "There was a problem creating the subscription";
 			return {
 				error,
 			};
@@ -167,10 +169,33 @@ export class MessageResolvers {
 		}
 	}
 
+	@Query(() => AllMessageResponse)
+	async getAllMessagesForRoom(
+		@Arg("roomId") roomId: string
+	): Promise<AllMessageResponse> {
+		try {
+			const messages = await getConnection()
+				.createQueryBuilder(Message, "message")
+				.leftJoinAndSelect("message.sender", "sender")
+				.where("message.roomId = :roomId", { roomId: roomId })
+				.orderBy("message.id", "DESC")
+				.getMany();
+			return {
+				messages,
+			};
+		} catch (err) {
+			const error = "A problem occured";
+			return {
+				error,
+			};
+		}
+	}
+
 	@Subscription({
 		topics: ({ args }) => args.topic,
 	})
 	newMessage(
+		@Arg("topic") topic: string, //topic is roomId which will be passed in dynamically
 		@Root() { id, sender, body, createdAt, room, roomId }: Message
 	): Message {
 		return { id, sender, body, createdAt, room, roomId };
