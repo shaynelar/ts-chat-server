@@ -20,7 +20,6 @@ import { MessageResolvers } from "./resolvers/message.resolvers";
 
 async function main(): Promise<void> {
 	const __prod__ = process.env.NODE_ENV ? true : false;
-
 	const app = express();
 	const httpServer = http.createServer(app);
 	const RedisStore = connectRedis(session);
@@ -30,7 +29,7 @@ async function main(): Promise<void> {
 		const connect = await connection();
 		await connect.runMigrations();
 	} catch (err) {
-		throw new Error(`Eror connecting to DB: ${err} Exiting...`);
+		throw new Error(`Error connecting to DB: ${err} Exiting...`);
 	}
 
 	const schema = await buildSchema({
@@ -66,14 +65,11 @@ async function main(): Promise<void> {
 	});
 	const subscriptionServer = SubscriptionServer.create(
 		{
-			// This is the `schema` we just created.
 			schema,
-			// These are imported from `graphql`.
 			execute,
 			subscribe,
 		},
 		{
-			// This is the `httpServer` we created in a previous step.
 			server: httpServer,
 			// This `server` is the instance returned from `new ApolloServer`.
 			path: server.graphqlPath,
@@ -93,7 +89,7 @@ async function main(): Promise<void> {
 				disableTouch: true,
 			}),
 			cookie: {
-				maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+				maxAge: 1000 * 60 * 60 * 24 * 365,
 				secure: __prod__,
 			},
 		})

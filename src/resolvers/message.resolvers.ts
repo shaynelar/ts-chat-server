@@ -171,7 +171,8 @@ export class MessageResolvers {
 
 	@Query(() => AllMessageResponse)
 	async getAllMessagesForRoom(
-		@Arg("roomId") roomId: string
+		@Arg("roomId") roomId: string,
+		@Arg("offsetPagination") offsetPagination: OffsetPagination
 	): Promise<AllMessageResponse> {
 		try {
 			const messages = await getConnection()
@@ -179,6 +180,7 @@ export class MessageResolvers {
 				.leftJoinAndSelect("message.sender", "sender")
 				.where("message.roomId = :roomId", { roomId: roomId })
 				.orderBy("message.id", "DESC")
+				.take(offsetPagination.limit)
 				.getMany();
 			return {
 				messages,
