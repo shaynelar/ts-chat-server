@@ -8,7 +8,7 @@ import {
 import http from "http";
 import cors from "cors";
 import { buildSchema } from "type-graphql";
-import { UserResolvers } from "./resolvers";
+import { UserResolvers, MessageResolvers } from "./resolvers";
 import { connection } from "./connection";
 import session from "express-session";
 import Redis from "ioredis";
@@ -16,7 +16,6 @@ import connectRedis from "connect-redis";
 import { v4 as uuidv4 } from "uuid";
 import { execute, subscribe } from "graphql";
 import { SubscriptionServer } from "subscriptions-transport-ws";
-import { MessageResolvers } from "./resolvers/message.resolvers";
 
 async function main(): Promise<void> {
 	const __prod__ = process.env.NODE_ENV ? true : false;
