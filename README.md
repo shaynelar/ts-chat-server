@@ -1,4 +1,4 @@
-Boiler plate for a Graphql Subscription based live chat server. 
+A Graphql Subscription based live-chat server. 
 
 Features:
 - Authentication
